@@ -1,6 +1,3 @@
-#raspberry pi 3A
-#install open_cv
-
 #!/usr/bin/env python
 
 '''
@@ -16,6 +13,8 @@ from __future__ import print_function
 import numpy as np
 import cv2 as cv
 import RPi.GPIO as GPIO
+from time import sleep
+from adafruit_servokit import ServoKit
 
 
 
@@ -27,14 +26,15 @@ from common import clock, draw_str
 #dc = x/20 * 100%
 
 #initialize variables
-servoPIN = 12
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(servoPIN,GPIO.OUT)
-p = GPIO.PWM(servoPIN, 50)
-p.start(0)
-p.ChangeDutyCycle(0)
-dcs = 0.0
-old_dcs = 0.0
+#servoPIN = 18
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(servoPIN,GPIO.OUT)
+#p = GPIO.PWM(servoPIN, 100)
+#p.start(5)
+#p.ChangeDutyCycle(5)
+dcs = 5.0
+old_dcs = 5.0
+kit = ServoKit(channels=16, address=0x40)
 
 
 
@@ -51,7 +51,8 @@ def move(dcs, old_dcs):
     if (0.9*old_dcs > dcs) or (dcs > old_dcs*1.1):
         print (dcs)
         print (old_dcs)
-        p.ChangeDutyCycle(dcs)
+        #p.ChangeDutyCycle(dcs)
+        kit.servo[0].angle = dcs
         
     return dcs
 
@@ -99,14 +100,22 @@ def main():
         vis = img.copy()
         draw_rects(vis, rects, (0, 255, 0))
         for x1, y1, x2, y2 in rects:
-            dc = int(((x1)+(x2))/2)
-            dcs = 20*(dc/501)
+            #dc = int(((x1)+(x2))/2)
+            dc = int(x1)
+            dcs = int((dc/480)*180)
             print ("DC = %f" % dcs)
             #print(dc)
-            dcs = 20*(dc/501)
+            #dcs = 2*(dc/501)
             
             #p.ChangeDutyCycle(dcs)
+            if dcs > 180:
+                dcs = 180
+            if dcs < 0.0:
+                dcs = 0.0    
+            
             old_dcs = move(dcs, old_dcs)
+        
+        
         
         if not nested.empty():
             for x1, y1, x2, y2 in rects:
@@ -128,5 +137,7 @@ def main():
 if __name__ == '__main__':
     print(__doc__)
     main()
+    #p.stop()
+    GPIO.cleanup()
     cv.destroyAllWindows()
 
